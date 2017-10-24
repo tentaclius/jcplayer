@@ -1,4 +1,9 @@
+void setup()
+{
+}
+
 double f(uint64_t t, double in)
 {
-   return sin(t / SampleRate * 440 * 2 * M_PI);
+   return sin((double)t / SampleRate * 440 * 2 * M_PI);
 }
+
