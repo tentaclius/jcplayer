@@ -1,0 +1,21 @@
+> Ringbuffer for processing!
+> Heap-based schedule
+> Frequency filters
+> Unite Generator and UsrSynth. Function to load an instrument '.so'. 
+> SampleRate global variable!
+> Application class
+
+> Chains
+
+> lib.cpp move to a library
+
+> More oscillators
+> Freq filters
+> Envelope presets
+
+> Scripting language interface for built-in commands and units
+> MIDI
+
+> GUI: table-like interface. Rows representing the chains with parameters
+
+> Readline commands completion

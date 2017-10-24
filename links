@@ -1,0 +1,6 @@
+load sample1 s1
+load sample1 s2
+load sample1 s3
+
+connect s1 s2 dac
+connect s2 s3 dac
