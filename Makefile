@@ -2,8 +2,8 @@ SRCDIR = src
 OBJDIR = obj
 SHRDIR = shrobj
 
-NIXINC = -I/home/tentaclius/.nix-profile/include
-NIXLIB = -L/home/tentaclius/.nix-profile/lib
+#NIXINC = -I/home/tentaclius/.nix-profile/include
+#NIXLIB = -L/home/tentaclius/.nix-profile/lib
 
 LIBS = -ljack -lm -ldl -lpthread -lreadline -lunitlib
 LIBDIR = -L. $(NIXLIB)
