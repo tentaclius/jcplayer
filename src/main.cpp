@@ -191,16 +191,52 @@ int jack_process_cb(jack_nframes_t nframes, void *arg)
 
    size_t readLen = nframes * sizeof(jack_default_audio_sample_t);
    char *outP = (char*)out;
+
+   // Read the ringbuffer until the output buffer is filled.
    while (readLen > 0)
    {
       size_t l = jack_ringbuffer_read(jack->ringbuffer, outP, readLen);
-      outP += l;
-      readLen -= l;
+      outP += l;        // Increment the buffer pointer.
+      readLen -= l;     // Decrement the number of bytes to be read.
    }
 
    t += nframes;
 
    return 0;      
+}
+
+//=================================================================================
+// Processing function. Writes the data into the jack's ringbuffer.
+void* jack_thread_func(void *arg)
+{
+   static uint64_t t = 0;     // Frame count.
+   static const size_t writeBufSize = 1024768;
+   static jack_default_audio_sample_t writeBuf[writeBufSize];
+
+   JackEngine *jack = (JackEngine*) arg;
+
+   while (true)
+   {
+      // The number of samples to write.
+      size_t nframes = jack_ringbuffer_write_space(jack->ringbuffer)
+         / sizeof(jack_default_audio_sample_t);
+
+      if (nframes == 0)
+      {
+         // Wait and skip the rest of the loop if the buffer is full.
+         usleep(100);
+         continue;
+      }
+
+      for (Synthesizers::iterator it = jack->mUnitLoaders.begin(); it != jack->mUnitLoaders.end(); it ++)
+         (*it)->unit->process(nframes, writeBuf, t);
+
+      t += nframes;
+
+      jack_ringbuffer_write(jack->ringbuffer, (const char*) writeBuf, nframes * sizeof(jack_default_audio_sample_t));
+   }
+
+   return NULL;
 }
 
 //=================================================================================
@@ -423,40 +459,6 @@ void* commandPipeThread(void *arg)
    }
 
    cout << "FIFO error " << strerror(errno) << endl;
-
-   return NULL;
-}
-
-//=================================================================================
-// Processing function. Writes the data into the jack's ringbuffer.
-void* jack_thread_func(void *arg)
-{
-   static uint64_t t = 0;     // Frame count.
-   static const size_t writeBufSize = 1024768;
-   static jack_default_audio_sample_t writeBuf[writeBufSize];
-
-   JackEngine *jack = (JackEngine*) arg;
-
-   while (true)
-   {
-      // The number of samples to write.
-      size_t nframes = jack_ringbuffer_write_space(jack->ringbuffer)
-         / sizeof(jack_default_audio_sample_t);
-
-      if (nframes == 0)
-      {
-         // Wait and skip the rest of the loop if the buffer is full.
-         usleep(100);
-         continue;
-      }
-
-      for (Synthesizers::iterator it = jack->mUnitLoaders.begin(); it != jack->mUnitLoaders.end(); it ++)
-         (*it)->unit->process(nframes, writeBuf, t);
-
-      t += nframes;
-
-      jack_ringbuffer_write(jack->ringbuffer, (const char*) writeBuf, nframes * sizeof(jack_default_audio_sample_t));
-   }
 
    return NULL;
 }

@@ -35,10 +35,11 @@ class AudioUnit
       virtual ~AudioUnit() {};
 
       virtual int process(jack_nframes_t nframes, sample_t *out, uint64_t t);
+      virtual void onControlUpdate();
+      virtual void setup() {};
 
       void setCtl(std::string control, double value);
       double getCtl(std::string control);
-      virtual void onControlUpdate();
       controlIter_t ctlListIter();
       controlIter_t ctlListEnd();
 };

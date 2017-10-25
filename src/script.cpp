@@ -11,7 +11,7 @@ class MySynth : public AudioUnit
 {
    public:
       JJ_MODULE_SOURCE
-      MySynth() { setup(); }
+      MySynth() {}
 };
 
 AudioUnit* init()
