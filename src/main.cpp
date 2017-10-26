@@ -209,9 +209,12 @@ int jack_process_cb(jack_nframes_t nframes, void *arg)
 // Processing function. Writes the data into the jack's ringbuffer.
 void* jack_thread_func(void *arg)
 {
+   //TODO! corrently there's no guarantee nframe is less than the buffer size!
+
    static uint64_t t = 0;     // Frame count.
    static const size_t writeBufSize = 1024768;
    static jack_default_audio_sample_t writeBuf[writeBufSize];
+   static int controlBuf[writeBufSize];
 
    JackEngine *jack = (JackEngine*) arg;
 
@@ -229,7 +232,9 @@ void* jack_thread_func(void *arg)
       }
 
       for (Synthesizers::iterator it = jack->mUnitLoaders.begin(); it != jack->mUnitLoaders.end(); it ++)
-         (*it)->unit->process(nframes, writeBuf, t);
+      {
+         (*it)->unit->process(nframes, writeBuf, controlBuf, t);
+      }
 
       t += nframes;
 

@@ -19,10 +19,10 @@ AudioUnit::AudioUnit(uint64_t t)
 //=================================================================================
 // Process a buffer of nframes samples.
 // Virtual. Can be overloaded in a program for detailed control.
-int AudioUnit::process(jack_nframes_t nframes, sample_t *out, uint64_t t)
+int AudioUnit::process(jack_nframes_t nframes, sample_t *out, int *ctl, uint64_t t)
 {
    for (jack_nframes_t i = 0; i < nframes; i ++)
-      out[i] = f(t + i, out[i]);
+      out[i] = f(t + i, ctl[i], out[i]);
 
    return 0;
 }

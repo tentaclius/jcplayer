@@ -76,7 +76,7 @@ class ADSR : public AudioUnit
 
       ADSR* set(double a, double d, double s, double r);
 
-      double f(uint64_t t, double in);
+      double f(uint64_t t, int c = 0, double in = 0);
 
       void start();
       void start(uint64_t t);

@@ -22,7 +22,7 @@ typedef std::map<std::string,double*>::iterator controlIter_t;
 class AudioUnit
 {
    private:
-      virtual double f(uint64_t t, double in) = 0;
+      virtual double f(uint64_t t, int c = 0, double in = 0) = 0;
 
    protected:
       uint64_t t0;
@@ -34,7 +34,7 @@ class AudioUnit
       AudioUnit(uint64_t t);
       virtual ~AudioUnit() {};
 
-      virtual int process(jack_nframes_t nframes, sample_t *out, uint64_t t);
+      virtual int process(jack_nframes_t nframes, sample_t *out, int *ctl, uint64_t t);
       virtual void onControlUpdate();
       virtual void setup() {};
 
