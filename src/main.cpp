@@ -447,7 +447,7 @@ void* commandPipeThread(void *arg)
    FILE *fd = NULL;
    char buf[1024 + 1] = {0};
 
-   if ((mkfifo("./jackclient.cmd", S_IFIFO|0666) != 0 && errno != EEXIST))
+   if (mkfifo("./jackclient.cmd", S_IFIFO|0666) != 0 && errno != EEXIST)
    {
       perror("error creating command FIFO");
       return NULL;
