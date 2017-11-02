@@ -214,7 +214,6 @@ void* jack_thread_func(void *arg)
    static uint64_t t = 0;     // Frame count.
    static const size_t writeBufSize = 1024768;
    static jack_default_audio_sample_t writeBuf[writeBufSize];
-   static int controlBuf[writeBufSize];
 
    JackEngine *jack = (JackEngine*) arg;
 
@@ -233,7 +232,7 @@ void* jack_thread_func(void *arg)
 
       for (Synthesizers::iterator it = jack->mUnitLoaders.begin(); it != jack->mUnitLoaders.end(); it ++)
       {
-         (*it)->unit->process(nframes, writeBuf, controlBuf, t);
+         (*it)->unit->process(nframes, writeBuf, t);
       }
 
       t += nframes;

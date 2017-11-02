@@ -94,7 +94,7 @@ ADSR* ADSR::set(double a, double d, double s, double r)
    return this;
 }
 
-double ADSR::f(uint64_t t, int c, double in)
+double ADSR::f(uint64_t t, double in)
 {
    if (state == ON)
    {
