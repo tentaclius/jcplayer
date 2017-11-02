@@ -1,5 +1,6 @@
-> Ringbuffer for processing!
-> Heap-based schedule
+> Mouse and keyboard input units.
+> MIDI input units.
+> OSC units.
 > Frequency filters
 > Unite Generator and UsrSynth. Function to load an instrument '.so'. 
 > SampleRate global variable!
