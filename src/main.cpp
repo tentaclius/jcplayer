@@ -54,8 +54,9 @@ UnitLoader::UnitLoader(string fileName, JackEngine *jEngine)
    if (mDlHandle == NULL)
       throw Exception("cannot load " + fileName + ": " + dlerror(), errno);
 
-   jack_nframes_t *sr = (jack_nframes_t*) dlsym(mDlHandle, "SampleRate");
-   (*sr) = mJackEngine->sampleRate;
+   //jack_nframes_t *sr = (jack_nframes_t*) dlsym(mDlHandle, "SampleRate");
+   //(*sr) = mJackEngine->sampleRate;
+   SampleRate = mJackEngine->sampleRate;
 
    externalInit_t init = (externalInit_t) dlsym(mDlHandle, "init");
    if (init != NULL)

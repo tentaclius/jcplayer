@@ -9,6 +9,8 @@
 
 typedef jack_default_audio_sample_t sample_t;
 
+#define T(t) ((double)(t) / SampleRate)
+
 enum
 {
    MSG_INT,
@@ -21,9 +23,6 @@ typedef std::map<std::string,double*>::iterator controlIter_t;
 
 class AudioUnit
 {
-   private:
-      virtual double f(uint64_t t, double in = 0) = 0;
-
    protected:
       uint64_t t0;
       controlMap_t controls;
@@ -37,6 +36,7 @@ class AudioUnit
       virtual int process(jack_nframes_t nframes, sample_t *out, uint64_t t);
       virtual void onControlUpdate();
       virtual void setup() {};
+      virtual double operator() (uint64_t t, double in = 0) = 0;
 
       void setCtl(std::string control, double value);
       double getCtl(std::string control);

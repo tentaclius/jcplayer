@@ -7,6 +7,8 @@ double freq;
 
 void setup()
 {
+   printf("Sample rate: %lu", SampleRate);
+
    gain = 1;
    freq = 440;
 
@@ -18,15 +20,19 @@ void setup()
    sqrOsc.freq = 440;
 }
 
-double f(uint64_t t, double in)
+double operator()(uint64_t t, double in)
 {
+   /*
    if (t % (4 * SampleRate) == 0)
       adsr.start();
 
    if (t % (4 * SampleRate) == SampleRate)
       adsr.stop();
+      */
 
-   return in + (sqrOsc() * 0.4 + sinOsc() * 0.4) * adsr.f(t, 0) * gain;
+   //return in + (sqrOsc(t) * 0.4 + sinOsc(t) * 0.4) * adsr(t, 0) * gain;
+
+   return in + sin(T(t) * 220 * M_PI) * 0.3;
 }
 
 void onControlUpdate()

@@ -9,6 +9,8 @@
 #include "unitlib.h"
 
 uint64_t SampleRate;
+uint64_t N;
+double T;
 
 /*=================================================================================*/
 /// general arythmetic functions
@@ -61,11 +63,6 @@ Generator::Generator(uint64_t t1)
    t0 = t = t1;
 }
 
-double Generator::operator() ()
-{
-   return operator()(t++);
-}
-
 /*=================================================================================*/
 /// ADSR - simple envelope generator
 
@@ -94,7 +91,7 @@ ADSR* ADSR::set(double a, double d, double s, double r)
    return this;
 }
 
-double ADSR::f(uint64_t t, double in)
+double ADSR::operator()(uint64_t t, double in)
 {
    if (state == ON)
    {
@@ -120,11 +117,6 @@ void ADSR::start()
 {
    state = ON;
    t = 0;
-}
-void ADSR::start(uint64_t t)
-{
-   state = ON;
-   this->t = t;
 }
 
 void ADSR::stop()
@@ -153,9 +145,9 @@ SinOsc::SinOsc(uint64_t t) : Generator(t)
    freq = 0;
 }
 
-double SinOsc::operator() (uint64_t t)
+double SinOsc::operator()(uint64_t t, double in)
 {
-   return sin(((double)(t - t0)) / SampleRate * freq * 2 * M_PI + phase);
+   return sin(T(t - t0) * freq * 2 * M_PI + phase);
 }
 
 /*=================================================================================*/
@@ -178,7 +170,7 @@ SqrOsc::SqrOsc(uint64_t t) : Generator(t)
    phase = 0;
 }
 
-double SqrOsc::operator() (uint64_t t)
+double SqrOsc::operator()(uint64_t t, double in)
 {
-   return signum(sin(((double)(t - t0)) / SampleRate * freq * 2 * M_PI + phase));
+   return signum(sin(T(t - t0) / SampleRate * freq * 2 * M_PI + phase));
 }

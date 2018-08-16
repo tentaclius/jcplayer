@@ -8,6 +8,8 @@
 
 #include "script.h"
 
+extern uint64_t SampleRate;
+
 typedef void (*ScheduleFn)(void);
 
 struct Schedule
@@ -50,8 +52,7 @@ class Generator
       Generator();
       Generator(uint64_t t1);
 
-      virtual double operator() (uint64_t t) = 0;
-      double operator() ();
+      virtual double operator() (uint64_t t, double in = 0) = 0;
 };
 
 /*=================================================================================*/
@@ -76,10 +77,9 @@ class ADSR : public AudioUnit
 
       ADSR* set(double a, double d, double s, double r);
 
-      double f(uint64_t t, double in = 0);
+      double operator()(uint64_t t, double in = 0);
 
       void start();
-      void start(uint64_t t);
       void stop();
 };
 
@@ -92,8 +92,7 @@ class SinOsc : public Generator
       SinOsc(double f);
       SinOsc(uint64_t t1);
 
-      using Generator::operator();
-      double operator() (uint64_t t);
+      double operator()(uint64_t t, double in = 0);
 
       double freq;
       double phase;
@@ -108,8 +107,7 @@ class SqrOsc : public Generator
       SqrOsc(double f);
       SqrOsc(uint64_t t);
 
-      using Generator::operator();
-      double operator() (uint64_t t);
+      double operator()(uint64_t t, double in = 0);
 
       double phase;
       double freq;

@@ -22,7 +22,7 @@ AudioUnit::AudioUnit(uint64_t t)
 int AudioUnit::process(jack_nframes_t nframes, sample_t *out, uint64_t t)
 {
    for (jack_nframes_t i = 0; i < nframes; i ++)
-      out[i] = f(t + i, out[i]);
+      out[i] = this->operator()(t + i, out[i]);
 
    return 0;
 }

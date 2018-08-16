@@ -12,8 +12,6 @@
 class JackEngine;
 class UnitLoader;
 
-extern uint64_t SampleRate;
-
 typedef jack_default_audio_sample_t sample_t;
 typedef AudioUnit* (*externalInit_t) ();
 typedef std::vector<UnitLoader*> Synthesizers;
