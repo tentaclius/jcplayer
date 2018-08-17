@@ -32,6 +32,9 @@
 
 using namespace std;
 
+pthread_mutex_t jackRingbufMtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t jackRingbufCanWrite;
+
 // Callback function for jack buffer processing.
 int jack_process_cb(jack_nframes_t nframes, void *arg);
 
@@ -195,6 +198,10 @@ int jack_process_cb(jack_nframes_t nframes, void *arg)
       size_t l = jack_ringbuffer_read(jack->ringbuffer, outP, readLen);
       outP += l;        // Increment the buffer pointer.
       readLen -= l;     // Decrement the number of bytes to be read.
+
+      // Notify that the buffer can be written
+      if (l > 0)
+         pthread_cond_signal(&jackRingbufCanWrite);
    }
 
    t += nframes;
@@ -221,8 +228,10 @@ void* jack_thread_func(void *arg)
 
       if (nframes == 0)
       {
-         // Wait and skip the rest of the loop if the buffer is full.
-         usleep(100);
+         // Wait for the buffer to be read
+         pthread_mutex_lock(&jackRingbufMtx);
+         pthread_cond_wait(&jackRingbufCanWrite, &jackRingbufMtx);
+         pthread_mutex_unlock(&jackRingbufMtx);
          continue;
       }
 
