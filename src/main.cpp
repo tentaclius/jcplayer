@@ -123,15 +123,13 @@ void JackEngine::init()
 void JackEngine::shutdown()
 {
    jack_ringbuffer_free(ringbuffer);
-   
-   cout << "Jack shutdown" << endl;
    jack_client_close(client);
 }
 
 //=================================================================================
 // < JackEngine >
 // Add a synthesizer.
-size_t JackEngine::addSynth(UnitLoader *s)
+size_t JackEngine::addSynth(shared_ptr<UnitLoader> s)
 {
    mUnitLoaders.push_back(s);
    return mUnitLoaders.size(); // synth's id;
@@ -142,32 +140,29 @@ size_t JackEngine::addSynth(UnitLoader *s)
 // Del a synthesizer by number.
 void JackEngine::delNthSynth(size_t n)
 {
-   UnitLoader *u = mUnitLoaders[n];
    mUnitLoaders.erase(mUnitLoaders.begin() + n);
-   delete u;
 }
 
 //=================================================================================
 // < JackEngine >
 // Replace a synthesizer with a new one.
-void JackEngine::replaceNthSynth(size_t n, UnitLoader *s)
+void JackEngine::replaceNthSynth(size_t n, shared_ptr<UnitLoader> s)
 {
-   delete mUnitLoaders[n];
    mUnitLoaders[n] = s;
 }
 
 //=================================================================================
 // < JackEngine >
 // Get the synthesizer list.
-Synthesizers* JackEngine::getSynths()
+Synthesizers& JackEngine::getSynths()
 {
-   return &mUnitLoaders;
+   return mUnitLoaders;
 }
 
 //=================================================================================
 // < JackEngine >
 // Get n-th synth.
-UnitLoader* JackEngine::nthSynth(size_t n)
+shared_ptr<UnitLoader> JackEngine::nthSynth(size_t n)
 {
    return mUnitLoaders[n];
 }
@@ -234,8 +229,8 @@ void* jack_thread_func(void *arg)
       // fill the buffer with zeros
       memset((void*) writeBuf, 0, nframes * sizeof(jack_default_audio_sample_t));
 
-      for (Synthesizers::iterator it = jack->mUnitLoaders.begin(); it != jack->mUnitLoaders.end(); it ++)
-         (*it)->unit->process(nframes, writeBuf, t);
+      for (shared_ptr<UnitLoader> &u : jack->mUnitLoaders)
+         u->unit->process(nframes, writeBuf, t);
 
       t += nframes;
 
@@ -278,7 +273,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          iss >> arg;
 
-         jack->addSynth(new UnitLoader(arg, jack));
+         jack->addSynth(make_shared<UnitLoader>(arg, jack));
          cout << jack->getSynthCount() << ": " << arg << endl;
       }
       catch (Exception &err)
@@ -328,11 +323,9 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
 
       if (n > 0 && n <= jack->getSynthCount())
       {
-         UnitLoader *s;
          try
          {
-            s = new UnitLoader(fileName, jack);
-            jack->replaceNthSynth(n - 1, s);
+            jack->replaceNthSynth(n - 1, make_shared<UnitLoader>(fileName, jack));
             cout << n << ". " << fileName << endl;
          }
          catch (Exception &err)
@@ -404,10 +397,10 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
    /* command: list */
    else if (cmd == "." || cmd == "ls" || cmd == "list")
    {
-      Synthesizers *ss = jack->getSynths();
+      Synthesizers &ss = jack->getSynths();
       unsigned i = 0;
-      for (Synthesizers::iterator it = ss->begin(); it != ss->end(); it ++, i ++)
-         cout << (i + 1) << ": " << (*it)->getName() << endl;
+      for (shared_ptr<UnitLoader> &u : ss)
+         cout << ++i << ": " << u->getName() << endl;
    }
 
    /* command: quit */

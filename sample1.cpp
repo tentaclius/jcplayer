@@ -32,7 +32,7 @@ double operator()(uint64_t t, double in)
 
    //return in + (sqrOsc(t) * 0.4 + sinOsc(t) * 0.4) * adsr(t, 0) * gain;
 
-   return sin(T(t) * 220 * 2 * M_PI) * 0.3;
+   return in + sin(T(t) * 220 * 2 * M_PI) * 0.3;
 }
 
 void onControlUpdate()

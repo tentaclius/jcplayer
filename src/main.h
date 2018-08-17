@@ -2,6 +2,7 @@
 #define _JACKCLIENT_H_
 
 #include <iostream>
+#include <memory>
 #include <sys/types.h>
 
 #include <jack/jack.h>
@@ -14,7 +15,7 @@ class UnitLoader;
 
 typedef jack_default_audio_sample_t sample_t;
 typedef AudioUnit* (*externalInit_t) ();
-typedef std::vector<UnitLoader*> Synthesizers;
+typedef std::vector<std::shared_ptr<UnitLoader>> Synthesizers;
 
 /* An envelope class to load and store details for a given plugin */
 class UnitLoader
@@ -53,11 +54,11 @@ class JackEngine
       void init();
       void shutdown();
 
-      size_t addSynth(UnitLoader *synth);
+      size_t addSynth(std::shared_ptr<UnitLoader> synth);
       void delNthSynth(size_t n);
-      void replaceNthSynth(size_t n, UnitLoader *synth);
-      Synthesizers* getSynths();
-      UnitLoader* nthSynth(size_t n);
+      void replaceNthSynth(size_t n, std::shared_ptr<UnitLoader> synth);
+      Synthesizers& getSynths();
+      std::shared_ptr<UnitLoader> nthSynth(size_t n);
       size_t getSynthCount();
 
       friend int jack_process_cb(jack_nframes_t nframes, void *arg);
