@@ -142,8 +142,9 @@ size_t JackEngine::addSynth(UnitLoader *s)
 // Del a synthesizer by number.
 void JackEngine::delNthSynth(size_t n)
 {
-   delete mUnitLoaders[n];
+   UnitLoader *u = mUnitLoaders[n];
    mUnitLoaders.erase(mUnitLoaders.begin() + n);
+   delete u;
 }
 
 //=================================================================================
@@ -221,8 +222,7 @@ void* jack_thread_func(void *arg)
    while (true)
    {
       // The number of samples to write.
-      size_t nframes = jack_ringbuffer_write_space(jack->ringbuffer)
-         / sizeof(jack_default_audio_sample_t);
+      size_t nframes = jack_ringbuffer_write_space(jack->ringbuffer) / sizeof(jack_default_audio_sample_t);
 
       if (nframes == 0)
       {
@@ -231,10 +231,11 @@ void* jack_thread_func(void *arg)
          continue;
       }
 
+      // fill the buffer with zeros
+      memset((void*) writeBuf, 0, nframes * sizeof(jack_default_audio_sample_t));
+
       for (Synthesizers::iterator it = jack->mUnitLoaders.begin(); it != jack->mUnitLoaders.end(); it ++)
-      {
          (*it)->unit->process(nframes, writeBuf, t);
-      }
 
       t += nframes;
 
@@ -297,7 +298,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          if (!quiet)
             cout << "unload: wrong input" << endl;
-         return 2;
+         return true;
       }
 
       if (n > 0 && n <= jack->getSynthCount())
@@ -306,7 +307,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          if (!quiet)
             cout << "Wrong id" << endl;
-         return 2;
+         return true;
       }
    }
 
@@ -322,7 +323,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          if (!quiet)
             cout << "replace: wrong input" << endl;
-         return 2;
+         return true;
       }
 
       if (n > 0 && n <= jack->getSynthCount())
@@ -339,7 +340,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
             if (!quiet)
                cout << "Cannot load the module: " << err.text << endl
                   << "errno: " << err.code << " (" << strerror(err.code) << ")" << endl;
-            return 2;
+            return true;
          }
 
       }
@@ -357,13 +358,13 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          if (!quiet)
             cout << "control: wrong data" << endl;
-         return 2;
+         return true;
       }
 
       if (n <= 0 || n > jack->getSynthCount())
       {
          cout << "control: wrong data" << endl;
-         return 2;
+         return true;
       }
 
       try
@@ -383,7 +384,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
                   cout << *it->second;
                cout << endl;
             }
-            return 0;
+            return true;
          }
 
          iss >> v;
@@ -412,8 +413,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
    /* command: quit */
    else if (cmd == "q" || cmd == "quit")
    {
-      jack->shutdown();
-      exit(0);
+      return false;
    }
 
    else if (cmd == "?" || cmd == "help")
@@ -434,10 +434,10 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
    {
       if (!quiet)
          cout << "Unrecognized input: " << cmd << endl;
-      return 2;
+      return true;
    }
 
-   return 0;
+   return true;
 }
 
 //=================================================================================
@@ -504,10 +504,15 @@ int main(int argc, char *argv[])
       }
 
       add_history(s);
-      processCommand(&jack, s);
+      bool ifContinue = processCommand(&jack, s);
       delete s;
+
+      // Exit if got the exit command
+      if (!ifContinue) break;
    }
 
+   pthread_cancel(cmdThread);
+   pthread_cancel(procThread);
    jack.shutdown();
    return 0;
 }

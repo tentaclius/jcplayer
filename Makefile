@@ -19,8 +19,6 @@ OBJECTS = $(OBJDIR)/main.o \
 SHROBJECTS = $(SHRDIR)/exception.o \
 				 $(SHRDIR)/audiounit.o
 
-main: $(TGT)
-
 ## build the executable
 $(TGT): $(OBJECTS) libunitlib.so
 	$(CXX) $(CFLAGS) $(OBJECTS) -o $(TGT) $(LIBDIR) $(LIBS)
@@ -54,5 +52,5 @@ clear: clean
 	rm -f *.so $(TGT) test
 
 ## rebuild all
-re: clear main
+re: clear $(TGT)
 

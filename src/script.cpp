@@ -13,8 +13,8 @@
 class MySynth : public AudioUnit
 {
    public:
+      MySynth() { this->setup(); }
       JJ_MODULE_SOURCE
-      MySynth() {}
 };
 
 AudioUnit* init()

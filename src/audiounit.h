@@ -36,7 +36,7 @@ class AudioUnit
       virtual int process(jack_nframes_t nframes, sample_t *out, uint64_t t);
       virtual void onControlUpdate();
       virtual void setup() {};
-      virtual double operator() (uint64_t t, double in = 0) = 0;
+      virtual double operator() (uint64_t t, double in = 0) {return 0;}
 
       void setCtl(std::string control, double value);
       double getCtl(std::string control);
