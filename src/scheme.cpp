@@ -14,13 +14,16 @@ class MySynth : public AudioUnit
    private:
       s7_scheme *s7;
       s7_pointer f;
+      std::string filename;
+      double dummyCtl;
 
    public:
       MySynth()
       {
          s7 = s7_init();
-         s7_load(s7, "scheme.scm");
-         f = s7_eval_c_string(s7, "f");
+         loadFile("scheme.scm");
+
+         addCtl("reload", &dummyCtl);
       }
 
       double operator()(uint64_t sampleNum, double in)
@@ -31,6 +34,18 @@ class MySynth : public AudioUnit
 
          s7_pointer r = s7_call(s7, f, args);
          return s7_number_to_real(s7, r);
+      }
+
+      void loadFile(std::string name)
+      {
+         filename = name;
+         s7_load(s7, name.c_str());
+         f = s7_eval_c_string(s7, "f");
+      }
+
+      void onControlUpdate()
+      {
+         loadFile("scheme.scm");
       }
 };
 
