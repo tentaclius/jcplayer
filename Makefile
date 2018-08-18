@@ -39,6 +39,14 @@ libunitlib.so: $(SRCDIR)/unitlib.cpp $(SRCDIR)/unitlib.h
 $(JJ_MODULE).so: $(JJ_MODULE_SOURCE) $(JJ_MAIN_SOURCE) $(SRCDIR)/script.cpp $(SRCDIR)/script.h $(SHROBJECTS)
 	$(CXX) $(SFLAGS) $(JJ_MAIN_SOURCE) -o $(JJ_MODULE).so $(INCDIR) $(LIBDIR) $(SHROBJECTS)
 
+## build s7
+$(OBJDIR)/s7.o: $(SRCDIR)/s7/s7.c $(SRCDIR)/s7/s7.h
+	gcc -c -fPIC -I.$(SRCDIR)/s7 $(SRCDIR)/s7/s7.c -o $(OBJDIR)/s7.o -g3
+
+## build s7 module
+scheme.so: $(SRCDIR)/scheme.cpp $(SRCDIR)/unitlib.h $(SHROBJECTS) $(OBJDIR)/s7.o
+	$(CXX) $(SFLAGS) $(SRCDIR)/scheme.cpp -o scheme.so $(OBJDIR)/s7.o $(INCDIR) $(LIBDIR) $(SHROBJECTS)
+
 ## test
 t: libunitlib.so
 	$(CXX) $(CFLAGS) $(SRCDIR)/test.cpp -o test $(LIBS) $(LIBDIR) $(INCDIR)
