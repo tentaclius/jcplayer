@@ -11,7 +11,7 @@ INCDIR = -I$(SRCDIR) $(NIXINC)
 CFLAGS = -Wall -g -std=c++11
 SFLAGS = -Wall -fPIC -shared -g -std=c++11
 
-TGT = jackclient
+TGT = jcplayer
 OBJECTS = $(OBJDIR)/main.o \
 			 $(OBJDIR)/exception.o \
 			 $(OBJDIR)/audiounit.o
