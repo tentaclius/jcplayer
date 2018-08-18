@@ -513,8 +513,11 @@ int main(int argc, char *argv[])
       if (!ifContinue) break;
    }
 
-   pthread_cancel(cmdThread);
-   pthread_cancel(procThread);
    jack.shutdown();
+   pthread_cancel(cmdThread);
+   pthread_join(cmdThread, NULL);
+   pthread_cancel(procThread);
+   pthread_join(procThread, NULL);
+
    return 0;
 }
