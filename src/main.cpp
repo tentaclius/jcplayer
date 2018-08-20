@@ -46,26 +46,22 @@ void jack_shutdown_cb(void *arg);
 
 
 //=================================================================================
-// < UnitLoader >
-// Constructor for UnitLoader, the wrapper for sound unit files.
-UnitLoader::UnitLoader(string fileName, JackEngine *jEngine)
+// < CppLoader >
+// Constructor for CppLoader, the wrapper for sound unit files.
+CppLoader::CppLoader(string fileName)
 {
-   mFileName = fileName;
-   mJackEngine = jEngine;
+   setName(fileName);
 
    mDlHandle = dlopen(("./" + fileName + ".so").c_str(), RTLD_NOW);
    if (mDlHandle == NULL)
       throw Exception("cannot load " + fileName + ": " + dlerror(), errno);
 
-   //jack_nframes_t *sr = (jack_nframes_t*) dlsym(mDlHandle, "SampleRate");
-   //(*sr) = mJackEngine->sampleRate;
-   SampleRate = mJackEngine->sampleRate;
-
    externalInit_t init = (externalInit_t) dlsym(mDlHandle, "init");
    if (init != NULL)
    {
-      unit = init();
-      if (unit == NULL)
+      setUnit(shared_ptr<AudioUnit>(init()));
+
+      if (getUnit() == nullptr)
          throw Exception("null pointer returned by init");
    }
    else
@@ -73,22 +69,13 @@ UnitLoader::UnitLoader(string fileName, JackEngine *jEngine)
 }
 
 //=================================================================================
-// < UnitLoader >
+// < CppLoader >
 // Destructor
-UnitLoader::~UnitLoader()
+CppLoader::~CppLoader()
 {
-   delete unit;
+   cout << "~CppLoader" << endl;
    dlclose(mDlHandle);
 }
-
-//=================================================================================
-// < UnitLoader >
-// Get the name of a current file.
-string UnitLoader::getName()
-{
-   return mFileName;
-}
-
 
 //=================================================================================
 // < JackEngine >
@@ -247,7 +234,7 @@ void* jack_thread_func(void *arg)
       memset((void*) writeBuf, 0, nframes * sizeof(jack_default_audio_sample_t));
 
       for (shared_ptr<UnitLoader> &u : jack->mUnitLoaders)
-         u->unit->process(nframes, writeBuf, t);
+         u->getUnit()->process(nframes, writeBuf, t);
 
       t += nframes;
 
@@ -290,7 +277,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          iss >> arg;
 
-         jack->addSynth(make_shared<UnitLoader>(arg, jack));
+         jack->addSynth(make_shared<CppLoader>(arg));
          cout << jack->getSynthCount() << ": " << arg << endl;
       }
       catch (Exception &err)
@@ -342,7 +329,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          try
          {
-            jack->replaceNthSynth(n - 1, make_shared<UnitLoader>(fileName, jack));
+            jack->replaceNthSynth(n - 1, make_shared<CppLoader>(fileName));
             cout << n << ". " << fileName << endl;
          }
          catch (Exception &err)
@@ -400,8 +387,8 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
          if (iss.fail())
          {
             // list all controls for the given unit
-            for (controlIter_t it = jack->nthSynth(n - 1)->unit->ctlListIter();
-                 it != jack->nthSynth(n - 1)->unit->ctlListEnd();
+            for (controlIter_t it = jack->nthSynth(n - 1)->getUnit()->ctlListIter();
+                 it != jack->nthSynth(n - 1)->getUnit()->ctlListEnd();
                  it ++)
             {
                cout << it->first << " = ";
@@ -417,10 +404,10 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
          iss >> v;
          if (iss.fail())
             // display the control's value
-            cout << jack->nthSynth(n - 1)->unit->getCtl(c) << endl;
+            cout << jack->nthSynth(n - 1)->getUnit()->getCtl(c) << endl;
          else
             // set the new value
-            jack->nthSynth(n - 1)->unit->setCtl(c, v);
+            jack->nthSynth(n - 1)->getUnit()->setCtl(c, v);
       }
       catch (Exception &e)
       {

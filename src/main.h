@@ -17,26 +17,43 @@ typedef jack_default_audio_sample_t sample_t;
 typedef AudioUnit* (*externalInit_t) ();
 typedef std::vector<std::shared_ptr<UnitLoader>> Synthesizers;
 
-/* An envelope class to load and store details for a given plugin */
+// Purely virtual class/interface for a unit loader.
 class UnitLoader
 {
-   void *mDlHandle;
-   std::string mFileName;
-   JackEngine *mJackEngine;
+   private:
+      std::string mName;
+      std::shared_ptr<AudioUnit> mAudioUnit;
+
+   protected:
+      void setName(std::string name) { mName = name; }
+      void setUnit(std::shared_ptr<AudioUnit> unit) { mAudioUnit = unit; }
 
    public:
-   UnitLoader(std::string fileName, JackEngine *jEngine);
-   ~UnitLoader();
-
-   std::string getName();
-
-   AudioUnit *unit;
+      virtual ~UnitLoader() { std::cout << "~UnitLoader()" << std::endl; } 
+      std::string getName() { return mName; }
+      std::shared_ptr<AudioUnit> getUnit() { return mAudioUnit; }
 };
 
-class SynthChain
+/* An envelope class to load and store details for a given compiled SO plugin */
+class CppLoader : public UnitLoader
 {
+   private:
+      void *mDlHandle;
 
+   public:
+      CppLoader(std::string fileName);
+      ~CppLoader();
 };
+
+//class ScmLoader : public UnitLoader
+//{
+//   private:
+//      std::shared_ptr<SchemeEngine> mScmEngine;
+//
+//   public:
+//      ScmLoader();
+//      ~ScmLoader();
+//};
 
 class JackEngine
 {
