@@ -32,6 +32,7 @@
 
 using namespace std;
 
+bool globalExit = false;
 pthread_mutex_t jackRingbufMtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t jackRingbufCanWrite;
 
@@ -59,7 +60,7 @@ CppLoader::CppLoader(string fileName)
    externalInit_t init = (externalInit_t) dlsym(mDlHandle, "init");
    if (init != NULL)
    {
-      setUnit(shared_ptr<AudioUnit>(init()));
+      setUnit(init());
 
       if (getUnit() == nullptr)
          throw Exception("null pointer returned by init");
@@ -112,14 +113,14 @@ void JackEngine::init()
 // Gracefully shut down the engine.
 void JackEngine::shutdown()
 {
-   jack_ringbuffer_free(ringbuffer);
    jack_client_close(client);
+   jack_ringbuffer_free(ringbuffer);
 }
 
 //=================================================================================
 // < JackEngine >
 // Add a synthesizer.
-size_t JackEngine::addSynth(shared_ptr<UnitLoader> s)
+size_t JackEngine::addSynth(UnitLoader *s)
 {
    mUnitLoaders.push_back(s);
    return mUnitLoaders.size(); // synth's id;
@@ -136,15 +137,16 @@ void JackEngine::delNthSynth(size_t n)
 //=================================================================================
 // < JackEngine >
 // Replace a synthesizer with a new one.
-void JackEngine::replaceNthSynth(size_t n, shared_ptr<UnitLoader> s)
+void JackEngine::replaceNthSynth(size_t n, UnitLoader *s)
 {
+   delete mUnitLoaders[n];
    mUnitLoaders[n] = s;
 }
 
 //=================================================================================
 void JackEngine::swapSynths(size_t n1, size_t n2)
 {
-   shared_ptr<UnitLoader> s = mUnitLoaders[n1];
+   UnitLoader *s = mUnitLoaders[n1];
    mUnitLoaders[n1] = mUnitLoaders[n2];
    mUnitLoaders[n2] = s;
 }
@@ -160,7 +162,7 @@ Synthesizers& JackEngine::getSynths()
 //=================================================================================
 // < JackEngine >
 // Get n-th synth.
-shared_ptr<UnitLoader> JackEngine::nthSynth(size_t n)
+UnitLoader* JackEngine::nthSynth(size_t n)
 {
    return mUnitLoaders[n];
 }
@@ -216,7 +218,7 @@ void* jack_thread_func(void *arg)
 
    JackEngine *jack = (JackEngine*) arg;
 
-   while (true)
+   while (!globalExit)
    {
       // The number of samples to write.
       size_t nframes = jack_ringbuffer_write_space(jack->ringbuffer) / sizeof(jack_default_audio_sample_t);
@@ -233,7 +235,7 @@ void* jack_thread_func(void *arg)
       // fill the buffer with zeros
       memset((void*) writeBuf, 0, nframes * sizeof(jack_default_audio_sample_t));
 
-      for (shared_ptr<UnitLoader> &u : jack->mUnitLoaders)
+      for (UnitLoader *u : jack->getSynths())
          u->getUnit()->process(nframes, writeBuf, t);
 
       t += nframes;
@@ -277,7 +279,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          iss >> arg;
 
-         jack->addSynth(make_shared<CppLoader>(arg));
+         jack->addSynth(new CppLoader(arg));
          cout << jack->getSynthCount() << ": " << arg << endl;
       }
       catch (Exception &err)
@@ -329,7 +331,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          try
          {
-            jack->replaceNthSynth(n - 1, make_shared<CppLoader>(fileName));
+            jack->replaceNthSynth(n - 1, new CppLoader(fileName));
             cout << n << ". " << fileName << endl;
          }
          catch (Exception &err)
@@ -420,7 +422,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
    {
       Synthesizers &ss = jack->getSynths();
       unsigned i = 0;
-      for (shared_ptr<UnitLoader> &u : ss)
+      for (UnitLoader *u : ss)
          cout << ++i << ": " << u->getName() << endl;
    }
 
@@ -525,11 +527,16 @@ int main(int argc, char *argv[])
       if (!ifContinue) break;
    }
 
-   jack.shutdown();
+   // Try to gently stop the thread
+   globalExit = true;
+   pthread_cond_signal(&jackRingbufCanWrite);
+
    pthread_cancel(cmdThread);
    pthread_join(cmdThread, NULL);
    pthread_cancel(procThread);
    pthread_join(procThread, NULL);
+
+   jack.shutdown();
 
    return 0;
 }

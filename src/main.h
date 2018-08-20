@@ -15,23 +15,23 @@ class UnitLoader;
 
 typedef jack_default_audio_sample_t sample_t;
 typedef AudioUnit* (*externalInit_t) ();
-typedef std::vector<std::shared_ptr<UnitLoader>> Synthesizers;
+typedef std::vector<UnitLoader*> Synthesizers;
 
 // Purely virtual class/interface for a unit loader.
 class UnitLoader
 {
    private:
       std::string mName;
-      std::shared_ptr<AudioUnit> mAudioUnit;
+      AudioUnit *mAudioUnit;
 
    protected:
       void setName(std::string name) { mName = name; }
-      void setUnit(std::shared_ptr<AudioUnit> unit) { mAudioUnit = unit; }
+      void setUnit(AudioUnit *unit) { mAudioUnit = unit; }
 
    public:
       virtual ~UnitLoader() { std::cout << "~UnitLoader()" << std::endl; } 
       std::string getName() { return mName; }
-      std::shared_ptr<AudioUnit> getUnit() { return mAudioUnit; }
+      AudioUnit* getUnit() { return mAudioUnit; }
 };
 
 /* An envelope class to load and store details for a given compiled SO plugin */
@@ -71,12 +71,12 @@ class JackEngine
       void init();
       void shutdown();
 
-      size_t addSynth(std::shared_ptr<UnitLoader> synth);
+      size_t addSynth(UnitLoader *synth);
       void delNthSynth(size_t n);
-      void replaceNthSynth(size_t n, std::shared_ptr<UnitLoader> synth);
+      void replaceNthSynth(size_t n, UnitLoader *synth);
       void swapSynths(size_t n1, size_t n2);
       Synthesizers& getSynths();
-      std::shared_ptr<UnitLoader> nthSynth(size_t n);
+      UnitLoader* nthSynth(size_t n);
       size_t getSynthCount();
 
       friend int jack_process_cb(jack_nframes_t nframes, void *arg);
