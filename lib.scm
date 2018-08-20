@@ -95,15 +95,27 @@
   (max (min x b) a))
 
 ;; line up
-(define (line-up t0_ sec_)
+(define (mk-line-up t0_ sec_)
   (let ((t0 t0_)
         (t1 (+ t0_ sec_)))
     (lambda (t)
       (limit 0 1 (/ (- t t0) (- t1 t0))) )))
 
 ;; line down
-(define (line-down t0_ sec_)
+(define (mk-line-down t0_ sec_)
   (let ((t0 t0_)
         (t1 (+ t0_ sec_)))
     (lambda (t)
       (limit 0 1 (/ (- t1 t) (- t1 t0))) )))
+
+;; adsr
+(define (adsr-on A D S t_)
+  (let ((line-a (mk-line-up t_ A))
+        (line-d (mk-line-up (+ t_ A) D)))
+    (lambda (t)
+      (- (line-a t) (* (line-d t) (- 1 S))) )))
+
+(define (adsr-off s r t_)
+  (let ((line-r (mk-line-down t_ r)))
+    (lambda (t)
+      (* s (line-r t)))))

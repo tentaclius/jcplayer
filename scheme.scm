@@ -6,7 +6,7 @@
 
 (define (my-sound f t0)
   (let ((freq f)
-        (l (line-down t0 0.3)))
+        (l (mk-line-down t0 0.3)))
     (lambda (t)
       (+ (* (sqr freq t) 0.5)
          (* (rnd) (* (l t) 0.5)) ))))
