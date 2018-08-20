@@ -41,7 +41,10 @@ $(JJ_MODULE).so: $(JJ_MODULE_SOURCE) $(JJ_MAIN_SOURCE) $(SRCDIR)/script.cpp $(SR
 
 ## build s7
 $(OBJDIR)/s7.o: $(SRCDIR)/s7/s7.c $(SRCDIR)/s7/s7.h
-	gcc -c -fPIC -I.$(SRCDIR)/s7 $(SRCDIR)/s7/s7.c -o $(OBJDIR)/s7.o -g3
+	gcc -c -fPIC -I$(SRCDIR)/s7 $(SRCDIR)/s7/s7.c -o $(OBJDIR)/s7.o -g3
+
+s7: $(SRCDIR)/s7/s7.c $(SRCDIR)/s7/s7.h
+	gcc -I$(SRCDIR)/s7 $(SRCDIR)/s7/s7.c -o s7 -g3 -DWITH_MAIN -ldl -lm
 
 ## build s7 module
 scheme.so: $(SRCDIR)/scheme.cpp $(SRCDIR)/unitlib.h $(SHROBJECTS) $(OBJDIR)/s7.o

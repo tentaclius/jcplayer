@@ -155,6 +155,14 @@ void JackEngine::replaceNthSynth(size_t n, shared_ptr<UnitLoader> s)
 }
 
 //=================================================================================
+void JackEngine::swapSynths(size_t n1, size_t n2)
+{
+   shared_ptr<UnitLoader> s = mUnitLoaders[n1];
+   mUnitLoaders[n1] = mUnitLoaders[n2];
+   mUnitLoaders[n2] = s;
+}
+
+//=================================================================================
 // < JackEngine >
 // Get the synthesizer list.
 Synthesizers& JackEngine::getSynths()
@@ -346,6 +354,23 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
          }
 
       }
+   }
+
+   /* command: swap */
+   else if (cmd == "%" || cmd == "swp" || cmd == "swap")
+   {
+      unsigned n1, n2;
+      iss >> n1 >> n2;
+
+      if (iss.fail())
+      {
+         if (!quiet)
+            cout << "swap: wrong input" << endl;
+         return true;
+      }
+
+      if (n1 > 0 && n1 <= jack->getSynthCount() && n2 > 0 && n2 <= jack->getSynthCount() && n1 != n2)
+         jack->swapSynths(n1 - 1, n2 - 1);
    }
 
    /* command: control */

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-LD_LIBRARY_PATH=$PWD ./jackclient
+LD_LIBRARY_PATH=$PWD ./jcplayer

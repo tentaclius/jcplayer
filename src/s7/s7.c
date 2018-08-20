@@ -75227,10 +75227,10 @@ int main(int argc, char **argv)
     }
   else 
     {
-#ifndef _MSC_VER
-      s7_load(sc, "repl.scm");              /* this is libc dependent */
-      s7_eval_c_string(sc, "((*repl* 'run))");
-#else
+//#ifndef _MSC_VER
+//      s7_load(sc, "repl.scm");              /* this is libc dependent */
+//      s7_eval_c_string(sc, "((*repl* 'run))");
+//#else
       while (1)                             /* a minimal repl -- taken from s7.html */
 	{
 	  char buffer[512];
@@ -75243,7 +75243,7 @@ int main(int argc, char **argv)
 	      s7_eval_c_string(sc, response); 
 	    }
 	}
-#endif
+//#endif
     }
   return(0);
 }

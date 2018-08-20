@@ -57,6 +57,7 @@ class JackEngine
       size_t addSynth(std::shared_ptr<UnitLoader> synth);
       void delNthSynth(size_t n);
       void replaceNthSynth(size_t n, std::shared_ptr<UnitLoader> synth);
+      void swapSynths(size_t n1, size_t n2);
       Synthesizers& getSynths();
       std::shared_ptr<UnitLoader> nthSynth(size_t n);
       size_t getSynthCount();
