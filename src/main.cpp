@@ -54,6 +54,7 @@ CppLoader::CppLoader(string fileName)
    setName(fileName);
 
    mDlHandle = dlopen(("./" + fileName + ".so").c_str(), RTLD_NOW);
+   cout << "dlopen-->" << mDlHandle << endl;
    if (mDlHandle == NULL)
       throw Exception("cannot load " + fileName + ": " + dlerror(), errno);
 
@@ -74,7 +75,7 @@ CppLoader::CppLoader(string fileName)
 // Destructor
 CppLoader::~CppLoader()
 {
-   cout << "~CppLoader" << endl;
+   setUnit(nullptr);
    dlclose(mDlHandle);
 }
 
@@ -500,7 +501,7 @@ int main(int argc, char *argv[])
    }
 
    // Start parallel processing for user input and for the ringbuffer.
-   pthread_create(&cmdThread, NULL, commandPipeThread, &jack);
+   //pthread_create(&cmdThread, NULL, commandPipeThread, &jack);
    pthread_create(&procThread, NULL, jack_thread_func, &jack);
 
    // Initialize readline library
@@ -528,8 +529,8 @@ int main(int argc, char *argv[])
    globalExit = true;
    pthread_cond_signal(&jackRingbufCanWrite);
 
-   pthread_cancel(cmdThread);
-   pthread_join(cmdThread, NULL);
+   //pthread_cancel(cmdThread);
+   //pthread_join(cmdThread, NULL);
    //pthread_cancel(procThread);
    pthread_join(procThread, NULL);
 

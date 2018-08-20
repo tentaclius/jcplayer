@@ -29,7 +29,7 @@ class UnitLoader
       void setUnit(std::unique_ptr<AudioUnit> &&unit) { mAudioUnit = std::move(unit); }
 
    public:
-      //virtual ~UnitLoader() { std::cout << "~UnitLoader()" << std::endl; } 
+      virtual ~UnitLoader() {} 
       std::string getName() { return mName; }
       std::unique_ptr<AudioUnit>& getUnit() { return mAudioUnit; }
 };
