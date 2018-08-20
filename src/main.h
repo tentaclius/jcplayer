@@ -8,6 +8,8 @@
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 
+#include "s7/s7.h"
+
 #include "unitlib.h"
 
 class JackEngine;
@@ -45,15 +47,85 @@ class CppLoader : public UnitLoader
       ~CppLoader();
 };
 
-//class ScmLoader : public UnitLoader
-//{
-//   private:
-//      std::shared_ptr<SchemeEngine> mScmEngine;
-//
-//   public:
-//      ScmLoader();
-//      ~ScmLoader();
-//};
+/* Class to represent a scheme engine */
+class SchemeEngine
+{
+   private:
+      SchemeEngine() { s7 = s7_init(); }
+      s7_scheme *s7;
+
+   public:
+      ~SchemeEngine() { s7_quit(s7); s7 = NULL; }
+      s7_scheme* get() { return s7; }
+
+      static SchemeEngine& getInstance()
+      {
+         static SchemeEngine *engine = NULL;
+
+         if (engine == NULL)
+            engine = new SchemeEngine();
+
+         return *engine;
+      }
+
+      s7_pointer loadFile(std::string fname)
+      {
+         return s7_load(s7, fname.c_str());
+      }
+};
+
+/* AudioUnit for a scheme file */
+class ScmAudioUnit : public AudioUnit
+{
+   private:
+      SchemeEngine &mEngine;
+      s7_pointer mFunction;
+
+   public:
+      ScmAudioUnit(SchemeEngine &eng, std::string name)
+         : mEngine(eng)
+      {
+         mFunction = mEngine.loadFile((name + ".scm").c_str());
+      }
+
+      virtual double operator() (uint64_t smp, double in = 0)
+      {
+         s7_pointer t = s7_make_real(mEngine.get(), T(smp));
+         s7_pointer i = s7_make_real(mEngine.get(), in);
+         s7_pointer args = s7_list(mEngine.get(), 2, t, i);
+
+         s7_pointer r = s7_call(mEngine.get(), mFunction, args);
+         return s7_number_to_real(mEngine.get(), r);
+      }
+};
+
+/* UnitLoader for a scheme file */
+class ScmLoader : public UnitLoader
+{
+   private:
+      SchemeEngine &mScmEngine;
+
+   public:
+      ScmLoader(SchemeEngine &eng, std::string name)
+         : mScmEngine(eng)
+      {
+         setName(name);
+         setUnit(std::make_unique<ScmAudioUnit>(eng, name));
+      };
+
+      ~ScmLoader() {};
+};
+
+/* Unit dispatcher function */
+std::unique_ptr<UnitLoader> loadUnit(std::string name)
+{
+   if (access((name + ".scm").c_str(), F_OK) == 0)
+      return std::make_unique<ScmLoader>(SchemeEngine::getInstance(), name);
+   if (access((name + ".so").c_str(), F_OK) == 0)
+      return std::make_unique<CppLoader>(name);
+
+   throw Exception("File not found");
+}
 
 class JackEngine
 {

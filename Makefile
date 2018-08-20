@@ -14,7 +14,8 @@ SFLAGS = -Wall -fPIC -shared -g -std=c++14
 TGT = jcplayer
 OBJECTS = $(OBJDIR)/main.o \
 			 $(OBJDIR)/exception.o \
-			 $(OBJDIR)/audiounit.o
+			 $(OBJDIR)/audiounit.o \
+			 $(OBJDIR)/s7.o
 
 SHROBJECTS = $(SHRDIR)/exception.o \
 				 $(SHRDIR)/audiounit.o

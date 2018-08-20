@@ -277,7 +277,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          iss >> arg;
 
-         jack->addSynth(make_unique<CppLoader>(arg));
+         jack->addSynth(loadUnit(arg));
          cout << jack->getSynthCount() << ": " << arg << endl;
       }
       catch (Exception &err)
@@ -329,7 +329,7 @@ int processCommand(JackEngine *jack, char *s, bool quiet = false)
       {
          try
          {
-            jack->replaceNthSynth(n - 1, make_unique<CppLoader>(fileName));
+            jack->replaceNthSynth(n - 1, loadUnit(fileName));
             cout << n << ". " << fileName << endl;
          }
          catch (Exception &err)
@@ -501,7 +501,7 @@ int main(int argc, char *argv[])
    }
 
    // Start parallel processing for user input and for the ringbuffer.
-   //pthread_create(&cmdThread, NULL, commandPipeThread, &jack);
+   pthread_create(&cmdThread, NULL, commandPipeThread, &jack);
    pthread_create(&procThread, NULL, jack_thread_func, &jack);
 
    // Initialize readline library
@@ -529,8 +529,8 @@ int main(int argc, char *argv[])
    globalExit = true;
    pthread_cond_signal(&jackRingbufCanWrite);
 
-   //pthread_cancel(cmdThread);
-   //pthread_join(cmdThread, NULL);
+   pthread_cancel(cmdThread);
+   pthread_join(cmdThread, NULL);
    //pthread_cancel(procThread);
    pthread_join(procThread, NULL);
 
