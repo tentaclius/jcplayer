@@ -8,8 +8,8 @@ SHRDIR = shrobj
 LIBS = -ljack -lm -ldl -lpthread -lreadline -lunitlib
 LIBDIR = -L. $(NIXLIB)
 INCDIR = -I$(SRCDIR) $(NIXINC)
-CFLAGS = -Wall -g -std=c++11
-SFLAGS = -Wall -fPIC -shared -g -std=c++11
+CFLAGS = -Wall -g -std=c++14
+SFLAGS = -Wall -fPIC -shared -g -std=c++14
 
 TGT = jcplayer
 OBJECTS = $(OBJDIR)/main.o \
