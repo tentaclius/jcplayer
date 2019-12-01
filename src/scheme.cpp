@@ -12,10 +12,10 @@
 class MySynth : public AudioUnit
 {
    private:
-      s7_scheme *s7;
-      s7_pointer f;
+      s7_scheme   *s7;
+      s7_pointer  f;
       std::string filename;
-      double dummyCtl;
+      double      dummyCtl;
 
    public:
       MySynth()
@@ -28,8 +28,8 @@ class MySynth : public AudioUnit
 
       double operator()(uint64_t sampleNum, double in)
       {
-         s7_pointer t = s7_make_real(s7, T(sampleNum));
-         s7_pointer i = s7_make_real(s7, in);
+         s7_pointer t    = s7_make_real(s7, T(sampleNum));
+         s7_pointer i    = s7_make_real(s7, in);
          s7_pointer args = s7_list(s7, 2, t, i);
 
          s7_pointer r = s7_call(s7, f, args);

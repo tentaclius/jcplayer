@@ -1,0 +1,10 @@
+LIBS = -ljack -lm -lguile-2.2 -lpthread
+BIN = jcs
+
+$(BIN): jcscheme.c
+	gcc jcscheme.c $(LIBS) -Wall -g -I/usr/include/guile/2.2 -o $(BIN)
+
+clean:
+	rm -f $(BIN)
+
+re: clean $(BIN)
