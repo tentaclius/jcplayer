@@ -1,19 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
 #include <sys/types.h>
 #include <signal.h>
 #include <pthread.h>
+#include <assert.h>
 
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
+
 #include <libguile.h>
 
+//TODO: proper makefile with pkg-config
 //TODO: incorporate fftw library for good DFT support
-//TODO: add minimal X11 support to implement (mouse-x) and (mouse-y) [0:1]
 
 #define JC_CLIENT_NAME "J-C-Scheme"
 #define JC_FILE_NAME "script.scm"
@@ -154,6 +159,108 @@ void shutdown_jack(jack_setup_t *setup)
 
 typedef struct
 {
+   xcb_connection_t *connection;
+   xcb_window_t root_window;
+   uint16_t root_width;
+   uint16_t root_height;
+   int16_t root_x;
+   int16_t root_y;
+} my_xcb_setup_t;
+my_xcb_setup_t *g_xcb;
+
+int init_xcb(my_xcb_setup_t *setup)
+{
+   int rc = RC_OK;
+
+   assert(setup != NULL);
+   setup->connection = xcb_connect(NULL, NULL);
+   assert(setup->connection != NULL);
+
+   if ((rc = xcb_connection_has_error(setup->connection)) != 0) {
+      display_error("XCB connection can not be established; error code %d", rc);
+      xcb_disconnect(setup->connection);
+      return RC_FAIL;
+   }
+
+   {
+   const xcb_setup_t *xsetup = xcb_get_setup(setup->connection);
+   assert(xsetup != NULL);
+   xcb_screen_iterator_t screen_it = xcb_setup_roots_iterator(xsetup);
+   assert(screen_it.data != NULL);
+   xcb_screen_t *screen = screen_it.data;
+   setup->root_window = screen->root;
+   }
+
+   {
+   xcb_generic_error_t *e = NULL;
+   xcb_get_geometry_cookie_t cookie = xcb_get_geometry(setup->connection, setup->root_window);
+   xcb_get_geometry_reply_t *reply_p = xcb_get_geometry_reply(setup->connection, cookie, &e);
+
+   setup->root_x = reply_p->x;
+   setup->root_y = reply_p->y;
+   setup->root_width = reply_p->width;
+   setup->root_height = reply_p->height;
+
+   if (reply_p) free(reply_p);
+   if (e) { free(e); rc = RC_FAIL; }
+   }
+
+   g_xcb = setup;
+   return rc;
+}
+
+void shutdown_xcb(my_xcb_setup_t *setup)
+{
+   g_xcb = NULL;
+   xcb_disconnect(setup->connection);
+}
+
+double xcb_mouse_x(my_xcb_setup_t *setup)
+{
+   double x = 0;
+   xcb_generic_error_t *e = NULL;
+
+   xcb_query_pointer_cookie_t cookie = xcb_query_pointer(setup->connection, setup->root_window);
+   xcb_query_pointer_reply_t *reply_p = xcb_query_pointer_reply(setup->connection, cookie, &e);
+
+   if (e == NULL)
+      x = ((double)reply_p->root_x) / setup->root_width;
+
+   if (reply_p) free(reply_p);
+   if (e) free(e);
+
+   return x;
+}
+
+SCM scm_mouse_x()
+{
+   return scm_from_double(g_xcb ? xcb_mouse_x(g_xcb) : 0.0);
+}
+
+double xcb_mouse_y(my_xcb_setup_t *setup)
+{
+   double y = 0;
+   xcb_generic_error_t *e = NULL;
+
+   xcb_query_pointer_cookie_t cookie = xcb_query_pointer(setup->connection, setup->root_window);
+   xcb_query_pointer_reply_t *reply_p = xcb_query_pointer_reply(setup->connection, cookie, &e);
+
+   if (e == NULL)
+      y = ((double)reply_p->root_y) / setup->root_height;
+
+   if (reply_p) free(reply_p);
+   if (e) free(e);
+
+   return y;
+}
+
+SCM scm_mouse_y()
+{
+   return scm_from_double(g_xcb ? xcb_mouse_y(g_xcb) : 0.0);
+}
+
+typedef struct
+{
    pthread_t worker_thread;
    jack_ringbuffer_t *buffer;
    int shutdown_flag;
@@ -207,6 +314,8 @@ void* guile_thread_func(void *arg)
 
    scm_init_guile();
    scm_c_define_gsubr("sample-rate", 0, 0, 0, scm_sample_rate);
+   scm_c_define_gsubr("mouse-x", 0, 0, 0, scm_mouse_x);
+   scm_c_define_gsubr("mouse-y", 0, 0, 0, scm_mouse_y);
 
    while (!setup->shutdown_flag) {
       generator_args.func = scm_c_catch(SCM_BOOL_T, guile_load_file, NULL, guile_exception_handler, NULL, NULL, NULL);
@@ -281,6 +390,7 @@ int main(int argc, char **argv)
 {
    jack_setup_t jack_setup;
    guile_setup_t guile_setup;
+   my_xcb_setup_t xcb_setup;
 
    if (init_jack(&jack_setup) != RC_OK) {
       display_error("JACK initialization failed. The program exits");
@@ -305,12 +415,18 @@ int main(int argc, char **argv)
       exit(1);
    }
 
+   if (init_xcb(&xcb_setup) != RC_OK) {
+      display_error("Can not initialize XCB");
+      exit(1);
+   }
+
    while (getchar() != EOF) {
       guile_reload_func(&guile_setup);
    }
 
    shutdown_guile_thread(&guile_setup);
    shutdown_jack(&jack_setup);
+   shutdown_xcb(&xcb_setup);
 
    exit(0);
 }
