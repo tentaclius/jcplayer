@@ -385,7 +385,8 @@ void guile_reload_func(guile_setup_t *setup)
 void thread_term_handler(int s)
 {
    display_error("Guile thread terminated");
-   shutdown_jack(g_sh_jack);
+   if (g_sh_jack != NULL)
+      shutdown_jack(g_sh_jack);
    exit(1);
 }
 
