@@ -392,14 +392,10 @@ void thread_term_handler(int s)
 
 int main(int argc, char **argv)
 {
+   int rc = RC_OK;
    jack_setup_t jack_setup;
    guile_setup_t guile_setup;
    my_xcb_setup_t xcb_setup;
-
-   if (init_jack(&jack_setup) != RC_OK) {
-      display_error("JACK initialization failed. The program exits");
-      exit(1);
-   }
 
    struct sigaction action;
    sigemptyset(&action.sa_mask);
@@ -408,18 +404,26 @@ int main(int argc, char **argv)
 
    if (sigaction(SIGCHLD, &action, NULL) != 0) {
       perror("sigaction");
-      exit(1);
-   }
-
-   if (init_guile_thread(&guile_setup, jack_setup.ringbuffer) != RC_OK) {
-      display_error("Guile initialization failed. The program exits");
-      shutdown_jack(&jack_setup);
-      exit(1);
+      rc = RC_FAIL;
+      goto cleanup_1;
    }
 
    if (init_xcb(&xcb_setup) != RC_OK) {
       display_error("Can not initialize XCB");
-      exit(1);
+      rc = RC_FAIL;
+      goto cleanup_1;
+   }
+
+   if (init_jack(&jack_setup) != RC_OK) {
+      display_error("JACK initialization failed. The program exits");
+      rc = RC_FAIL;
+      goto cleanup_2;
+   }
+
+   if (init_guile_thread(&guile_setup, jack_setup.ringbuffer) != RC_OK) {
+      display_error("Guile initialization failed. The program exits");
+      rc = RC_FAIL;
+      goto cleanup_3;
    }
 
    while (getchar() != EOF) {
@@ -427,8 +431,10 @@ int main(int argc, char **argv)
    }
 
    shutdown_guile_thread(&guile_setup);
+cleanup_3:
    shutdown_jack(&jack_setup);
+cleanup_2:
    shutdown_xcb(&xcb_setup);
-
-   exit(0);
+cleanup_1:
+   exit(rc);
 }
