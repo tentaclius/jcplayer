@@ -40,7 +40,7 @@
         s))))
 
 ;; convert a note number to the frequency
-(define note->freq 
+(define note->freq
   (let 
     ((notes-vec (vector
                   8.1757989156 8.6619572180 9.1770239974 9.7227182413 10.3008611535 10.9133822323 11.5623257097 12.2498573744

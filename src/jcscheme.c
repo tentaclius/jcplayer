@@ -5,7 +5,6 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <signal.h>
-
 #include <pthread.h>
 
 #include <jack/jack.h>
@@ -13,11 +12,14 @@
 
 #include <libguile.h>
 
-#define JACK_CLIENT_NAME "J-C-Scheme"
-#define SCM_FILE_NAME "script.scm"
-#define SCM_FUNC_NAME "f"
-#define RINGBUFFER_SIZE 10000
-#define TMP_BUFFER_SIZE 1024
+//TODO: incorporate fftw library for good DFT support
+//TODO: add minimal X11 support to implement (mouse-x) and (mouse-y) [0:1]
+
+#define JC_CLIENT_NAME "J-C-Scheme"
+#define JC_FILE_NAME "script.scm"
+#define JC_FUNC_NAME "f"
+#define JC_RINGBUFFER_SIZE 10000
+#define JC_TMP_BUFFER_SIZE 1024
 
 #define RC_OK 0
 #define RC_FAIL 1
@@ -99,12 +101,12 @@ int init_jack(jack_setup_t *setup)
    jack_options_t options = JackNullOption;
    jack_status_t status;
 
-   if ((setup->client = jack_client_open(JACK_CLIENT_NAME, options, &status)) == NULL) {
+   if ((setup->client = jack_client_open(JC_CLIENT_NAME, options, &status)) == NULL) {
       display_error("Cannot create JACK client");
       return RC_FAIL;
    }
 
-   if ((setup->ringbuffer = jack_ringbuffer_create(RINGBUFFER_SIZE)) == NULL) {
+   if ((setup->ringbuffer = jack_ringbuffer_create(JC_RINGBUFFER_SIZE)) == NULL) {
       display_error("Can not create JACK ringbuffer");
       return RC_FAIL;
    }
@@ -165,8 +167,8 @@ typedef struct {
 
 SCM guile_load_file(void *arg)
 {
-   scm_c_primitive_load(SCM_FILE_NAME);
-   return scm_c_eval_string(SCM_FUNC_NAME);
+   scm_c_primitive_load(JC_FILE_NAME);
+   return scm_c_eval_string(JC_FUNC_NAME);
 }
 
 SCM guile_run_generator(void *arg)
@@ -200,7 +202,7 @@ SCM scm_sample_rate()
 void* guile_thread_func(void *arg)
 {
    guile_setup_t *setup = (guile_setup_t*) arg;
-   sample_t data[TMP_BUFFER_SIZE];
+   sample_t data[JC_TMP_BUFFER_SIZE];
    generator_arg_t generator_args;
 
    scm_init_guile();
@@ -222,7 +224,7 @@ void* guile_thread_func(void *arg)
       while (!setup->shutdown_flag && !setup->reload_flag)
       {
          size_t avail;
-         while ((avail = MIN(jack_ringbuffer_write_space(setup->buffer) / sizeof(sample_t), TMP_BUFFER_SIZE)) == 0);
+         while ((avail = MIN(jack_ringbuffer_write_space(setup->buffer) / sizeof(sample_t), JC_TMP_BUFFER_SIZE)) == 0);
 
          for (unsigned i = 0; i < avail; i ++) {
             SCM v = scm_c_catch(SCM_BOOL_T, guile_run_generator, &generator_args, guile_exception_handler, NULL, NULL, NULL);
