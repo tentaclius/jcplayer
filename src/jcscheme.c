@@ -103,6 +103,8 @@ int jack_samplerate_cb(jack_nframes_t nframes, void *arg)
 
 int init_jack(jack_setup_t *setup)
 {
+   g_sh_jack = setup;
+
    jack_options_t options = JackNullOption;
    jack_status_t status;
 
@@ -151,6 +153,7 @@ int init_jack(jack_setup_t *setup)
 
 void shutdown_jack(jack_setup_t *setup)
 {
+   g_sh_jack = NULL;
    jack_port_unregister(setup->client, setup->input_port);
    jack_port_unregister(setup->client, setup->output_port);
    jack_client_close(setup->client);
@@ -396,8 +399,6 @@ int main(int argc, char **argv)
       display_error("JACK initialization failed. The program exits");
       exit(1);
    }
-
-   g_sh_jack = &jack_setup;
 
    struct sigaction action;
    sigemptyset(&action.sa_mask);
